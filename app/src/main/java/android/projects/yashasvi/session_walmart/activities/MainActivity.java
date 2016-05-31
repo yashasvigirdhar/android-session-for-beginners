@@ -3,6 +3,7 @@ package android.projects.yashasvi.session_walmart.activities;
 import android.os.Bundle;
 import android.projects.yashasvi.session_walmart.R;
 import android.projects.yashasvi.session_walmart.adapters.ContactsAdapter;
+import android.projects.yashasvi.session_walmart.database.ContactsDAO;
 import android.projects.yashasvi.session_walmart.models.Contact;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
@@ -14,11 +15,11 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
+    ContactsDAO contactsDAO;
 
     RecyclerView contactsRView;
     ContactsAdapter contactsAdapter;
@@ -40,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initialize() {
-        initializeDataset();
+        initializeDatabase();
         initializeViews();
         initializeAddContactDialog();
     }
@@ -57,14 +58,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         addContactDialog = dialogBuilder.create();
     }
 
-    private void initializeDataset() {
-        contacts = new ArrayList<>();
-        contacts.add(new Contact("Rafiq", "Ooty"));
-        contacts.add(new Contact("Manju", "Hampi"));
-        contacts.add(new Contact("Prem", "Ooty"));
-        contacts.add(new Contact("Vashishth", "Rishikesh"));
-        contacts.add(new Contact("Patang", "Gokarna"));
-
+    private void initializeDatabase() {
+        contactsDAO = new ContactsDAO(this);
+        contactsDAO.open();
+        contacts = contactsDAO.getAllContacts();
     }
 
     private void initializeViews() {
@@ -85,7 +82,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.bOk:
                 if (validateInput()) {
-                    contactsAdapter.addContact(new Contact(etName.getText().toString(), etDescription.getText().toString()));
+                    Contact contact = contactsDAO.addContact(etName.getText().toString(), etDescription.getText().toString());
+                    contactsAdapter.addContact(contact);
                 }
             case R.id.bCancel:
                 etName.setText("");
@@ -102,5 +100,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             return true;
         Toast.makeText(MainActivity.this, "Name or Description Can't be empty", Toast.LENGTH_SHORT).show();
         return false;
+    }
+
+    @Override
+    protected void onPause() {
+        contactsDAO.close();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        contactsDAO.open();
+        super.onResume();
     }
 }
