@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">Session-Walmart</string>
+    <string name="app_name">Walmart Android Session</string>
+    <string name="contact_name">Name</string>
+    <string name="contact_description">Description</string>
 </resources>
