@@ -1,9 +1,12 @@
 package android.projects.yashasvi.session_walmart.activities;
 
-import android.os.AsyncTask;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.projects.yashasvi.session_walmart.services.ContactsDownloadService;
 import android.projects.yashasvi.session_walmart.R;
-import android.projects.yashasvi.session_walmart.Utils.ServerHelperFunctions;
 import android.projects.yashasvi.session_walmart.adapters.ContactsAdapter;
 import android.projects.yashasvi.session_walmart.database.ContactsDAO;
 import android.projects.yashasvi.session_walmart.models.Contact;
@@ -50,6 +53,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initialize();
+        syncContactsWithServer();
     }
 
     private void initialize() {
@@ -118,12 +122,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onPause() {
         contactsDAO.close();
+        unregisterReceiver(receiver);
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         contactsDAO.open();
+        registerReceiver(receiver, new IntentFilter(ContactsDownloadService.RECEIVER_FILTER));
         super.onResume();
     }
 
@@ -147,62 +153,48 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void syncContactsWithServer() {
         String url = "https://raw.githubusercontent.com/itsyash/SimpleTextHosting/master/contacts.json";
-        new GetPlacesAsyncTask(url).execute();
+        Intent intent = new Intent(this, ContactsDownloadService.class);
+        intent.putExtra(ContactsDownloadService.CONTACTS_URL, url);
+        startService(intent);
     }
 
-    public class GetPlacesAsyncTask extends AsyncTask<Void, Void, String> {
-
-        private final String mUrl;
-
-        public GetPlacesAsyncTask(String url) {
-            mUrl = url;
-        }
+    private BroadcastReceiver receiver = new BroadcastReceiver() {
 
         @Override
-        protected String doInBackground(Void... params) {
-            String resultString;
-            resultString = ServerHelperFunctions.getJSON(mUrl);
-            return resultString;
-        }
-
-        @Override
-        protected void onPostExecute(String jsonString) {
-            super.onPostExecute(jsonString);
-            Log.i(LOG_TAG, "onPostExecute");
-            Log.i(LOG_TAG, jsonString);
-            if (jsonString.contains("Exception")) {
-                return;
-            }
-            Type collectionType = new TypeToken<List<Contact>>() {
-            }.getType();
-            try {
-                List<Contact> receivedContacts = (ArrayList<Contact>) new Gson().fromJson(jsonString, collectionType);
-                boolean exists;
-                for (int i = 0; i < receivedContacts.size(); i++) {
-                    exists = false;
-                    Contact curContact = receivedContacts.get(i);
-                    for (int j = 0; j < contacts.size(); j++) {
-                        if (curContact.getName().equals(contacts.get(j).getName())) {
-                            exists = true;
-                            break;
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle = intent.getExtras();
+            if (bundle != null) {
+                String jsonString = bundle.getString(ContactsDownloadService.CONTACTS_KEY);
+                Type collectionType = new TypeToken<List<Contact>>() {
+                }.getType();
+                try {
+                    List<Contact> receivedContacts = (ArrayList<Contact>) new Gson().fromJson(jsonString, collectionType);
+                    boolean exists;
+                    for (int i = 0; i < receivedContacts.size(); i++) {
+                        exists = false;
+                        Contact curContact = receivedContacts.get(i);
+                        for (int j = 0; j < contacts.size(); j++) {
+                            if (curContact.getName().equals(contacts.get(j).getName())) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            Log.d(LOG_TAG, "doesn't exists : " + curContact.getName());
+                            Contact contact = contactsDAO.addContact(curContact.getName(), curContact.getDescription());
+                            contactsAdapter.addContact(contact);
                         }
                     }
-                    if (!exists) {
-                        Log.d(LOG_TAG, "doesn't exists : " + curContact.getName());
-                        Contact contact = contactsDAO.addContact(curContact.getName(), curContact.getDescription());
-                        contactsAdapter.addContact(contact);
-                    }
+
+                    for (int i = 0; i < contacts.size(); i++)
+                        Log.i(LOG_TAG, contacts.get(i).getName());
+
+                } catch (JsonSyntaxException e) {
+                    //not able to parse response, after requesting all places
+
                 }
-
-                for (int i = 0; i < contacts.size(); i++)
-                    Log.i(LOG_TAG, contacts.get(i).getName());
-
-            } catch (JsonSyntaxException e) {
-                //not able to parse response, after requesting all places
-
             }
-
         }
-    }
+    };
 
 }
