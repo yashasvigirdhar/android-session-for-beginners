@@ -22,6 +22,11 @@ public class ContactsAdapter extends RecyclerView.Adapter<ContactsViewHolder> {
         this.contacts = contacts;
     }
 
+    public void addContact(Contact contact) {
+        contacts.add(contact);
+        notifyDataSetChanged();
+    }
+
     @Override
     public ContactsViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater layoutInflater = LayoutInflater.from(parent.getContext());

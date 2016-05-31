@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="5dp"
+    android:orientation="vertical">
+
+    <EditText
+        android:id="@+id/etName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="5dp"
+        android:ems="10"
+        android:hint="Name"
+        android:inputType="textPersonName" />
+
+    <EditText
+        android:id="@+id/etDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/etName"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="5dp"
+        android:ems="10"
+        android:hint="Description"
+        android:inputType="textMultiLine" />
+
+    <Button
+        android:id="@+id/bOk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/etDescription"
+        android:text="Ok"
+        android:layout_margin="5dp"/>
+
+    <Button
+        android:id="@+id/bCancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/etDescription"
+        android:layout_alignParentRight="true"
+        android:layout_margin="5dp"
+        android:text="Cancel" />
+
+
+</RelativeLayout>
